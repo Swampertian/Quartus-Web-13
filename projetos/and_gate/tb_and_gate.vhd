@@ -5,12 +5,13 @@ entity tb_and_gate is
 end entity tb_and_gate;
 
 architecture sim of tb_and_gate is
-    signal SW0, SW1, LEDR0 : std_logic;
+    signal SW0, SW1, LEDR1, LEDR0: std_logic;
 begin
     uut: entity work.and_gate
         port map (
             SW0   => SW0,
             SW1   => SW1,
+            LEDR1 => LEDR1,
             LEDR0 => LEDR0
         );
 

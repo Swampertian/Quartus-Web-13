@@ -14,6 +14,7 @@ set_global_assignment -name TOP_LEVEL_ENTITY and_gate
 set_location_assignment PIN_L22 -to SW0
 set_location_assignment PIN_L21 -to SW1
 set_location_assignment PIN_R20 -to LEDR0
+set_location_assignment PIN_R19 -to LEDR1
 
 export_assignments
 execute_flow -compile

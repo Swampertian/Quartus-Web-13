@@ -1,0 +1,15 @@
+\babel@toc {brazil}{}\relax 
+\contentsline {chapter}{\numberline {1}Questão 1 -- Minimização Lógica}{6}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Expressão original}{6}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Minimização por mapa de Karnaugh}{6}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Tabela verdade}{7}{section.1.3}%
+\contentsline {section}{\numberline {1.4}Diagrama lógico}{9}{section.1.4}%
+\contentsline {section}{\numberline {1.5}Implementação VHDL estrutural (sem minimização)}{9}{section.1.5}%
+\contentsline {section}{\numberline {1.6}Simulação no Quartus}{10}{section.1.6}%
+\contentsline {section}{\numberline {1.7}Teste na DE1}{11}{section.1.7}%
+\contentsline {chapter}{\numberline {2}Questão 2 -- Hazards}{12}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Circuito}{12}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Implementação na DE1}{12}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Simulação funcional}{12}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Simulação de timing}{12}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Explicação do hazard}{12}{section.2.5}%

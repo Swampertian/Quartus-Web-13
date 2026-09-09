@@ -1,0 +1,228 @@
+\documentclass[report, 12pt]{uftreport}
+
+\usepackage{amsmath}
+
+\title{Laboratório 2 -- Display de 7 Segmentos e Conversor Gray-Binário}
+
+\author{Pedro Lucas}{Moreira}
+
+\advisor{Prof.}{Tiago}{Almeida}{}
+
+\department{CC}
+\class{Linguagens de Descrição de Hardware -- 2026/2}
+
+\date{8}{9}{2026}
+
+\keyword{VHDL}
+\keyword{Display de 7 Segmentos}
+\keyword{Decodificador}
+\keyword{Atribuição Concorrente}
+
+\begin{document}
+
+\frontmatter
+\maketitle
+\makefrontpage
+
+\mainmatter
+\ChapterStart{first}{Questão 1 -- Display de 7 Segmentos}
+
+\chapter{Questão 1 -- Display de 7 Segmentos}
+
+\section{Item (a) -- Decodificador decimal com detecção de erro}
+
+Cada bit de \texttt{SWITCH\_PINS} corresponde a um switch físico da DE1 (0 = chave para baixo, 1 = chave para cima), formando um número binário de 0 a 127. O decodificador mapeia esse valor diretamente para os segmentos ativos-baixo do display: as combinações de 0 a 9 acendem o dígito correspondente, e qualquer valor fora dessa faixa (10 a 127) acende o padrão da letra E.
+
+\begin{lstlisting}[language=VHDL]
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity display is
+    port (
+        SWITCH_PINS: in std_logic_vector(6 downto 0);
+        HEX_PINS: out std_logic_vector(6 downto 0)
+    );
+end entity display;
+
+architecture rtl of display is
+begin
+    with SWITCH_PINS select
+        HEX_PINS <= "1000000" when "0000000", -- 0
+                    "1111001" when "0000001", -- 1
+                    "0100100" when "0000010", -- 2
+                    "0110000" when "0000011", -- 3
+                    "0011001" when "0000100", -- 4
+                    "0010010" when "0000101", -- 5
+                    "0000010" when "0000110", -- 6
+                    "1111000" when "0000111", -- 7
+                    "0000000" when "0001000", -- 8
+                    "0010000" when "0001001", -- 9
+                    "0000110" when others;    -- E (fora da faixa 0-9)
+
+end architecture rtl;
+\end{lstlisting}
+
+\section{Item (b) -- Conversor hexadecimal}
+
+Para o item (b), a faixa de entrada de 4 bits (0 a 15) é totalmente válida em hexadecimal, então não existe caso de erro: cada combinação binária tem um dígito ou letra (0--9, A--F) correspondente nos segmentos.
+
+\begin{lstlisting}[language=VHDL]
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity conv_7seg is
+    port (
+        HEX_IN  : in std_logic_vector(3 downto 0);
+        HEX_OUT : out std_logic_vector(6 downto 0)
+    );
+end entity conv_7seg;
+
+architecture rtl of conv_7seg is
+begin
+    with HEX_IN select
+        HEX_OUT <= "1000000" when "0000", -- 0
+                   "1111001" when "0001", -- 1
+                   "0100100" when "0010", -- 2
+                   "0110000" when "0011", -- 3
+                   "0011001" when "0100", -- 4
+                   "0010010" when "0101", -- 5
+                   "0000010" when "0110", -- 6
+                   "1111000" when "0111", -- 7
+                   "0000000" when "1000", -- 8
+                   "0010000" when "1001", -- 9
+                   "0001000" when "1010", -- A
+                   "0000011" when "1011", -- b
+                   "1000110" when "1100", -- C
+                   "0100001" when "1101", -- d
+                   "0000110" when "1110", -- E
+                   "0001110" when "1111", -- F
+                   "1111111" when others;
+
+end architecture rtl;
+\end{lstlisting}
+
+O topo do projeto (\texttt{displayb.vhd}) apenas instancia o componente \texttt{conv\_7seg}, ligando as entradas físicas dos switches à sua porta, para teste na DE1:
+
+\begin{lstlisting}[language=VHDL, label={lst:displayb}]
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity displayb is
+    port (
+        SWITCH_PINS: in std_logic_vector(3 downto 0);
+        HEX_PINS: out std_logic_vector(6 downto 0)
+    );
+end entity displayb;
+
+architecture rtl of displayb is
+begin
+    conv_inst: entity work.conv_7seg
+        port map (
+            HEX_IN  => SWITCH_PINS,
+            HEX_OUT => HEX_PINS
+        );
+
+end architecture rtl;
+\end{lstlisting}
+
+\ChapterStart{second}{Questão 2 -- Conversor Gray -- Binário}
+
+\chapter{Questão 2 -- Conversor Gray -- Binário}
+
+\section{Item (a)}
+
+Como cada bit de saída depende apenas dos bits de entrada (nunca de outro bit de saída), a implementação é uma atribuição concorrente direta, sem necessidade de sinal intermediário nem de processo.
+
+\begin{lstlisting}[language=VHDL]
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity gray2bin is
+    port (
+        GRAY_IN : in  std_logic_vector(3 downto 0);
+        BIN_OUT : out std_logic_vector(3 downto 0)
+    );
+end entity gray2bin;
+
+architecture rtl of gray2bin is
+begin
+    BIN_OUT(3) <= GRAY_IN(3);
+    BIN_OUT(2) <= GRAY_IN(2) xor GRAY_IN(3);
+    BIN_OUT(1) <= GRAY_IN(1) xor GRAY_IN(2) xor GRAY_IN(3);
+    BIN_OUT(0) <= GRAY_IN(0) xor GRAY_IN(1) xor GRAY_IN(2) xor GRAY_IN(3);
+
+end architecture rtl;
+\end{lstlisting}
+
+\section{Itens (d) e (e)}
+
+O \texttt{demo\_setup} foi feito em VHDL, instanciando os dois componentes já prontos \texttt{gray2bin} e \texttt{conv\_7seg} e ligando-os em cascata: a entrada de 4 bits em código Gray (\texttt{SW}) é convertida para binário e em seguida decodificada para os 7 segmentos (\texttt{HEX3}).
+
+\begin{lstlisting}[language=VHDL]
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity demo_setup is
+    port (
+        SW    : in  std_logic_vector(3 downto 0);
+        HEX3  : out std_logic_vector(6 downto 0)
+    );
+end entity demo_setup;
+
+architecture rtl of demo_setup is
+    signal bin_value : std_logic_vector(3 downto 0);
+begin
+    gray_inst: entity work.gray2bin
+        port map (
+            GRAY_IN => SW,
+            BIN_OUT => bin_value
+        );
+
+    seg_inst: entity work.conv_7seg
+        port map (
+            HEX_IN  => bin_value,
+            HEX_OUT => HEX3
+        );
+
+end architecture rtl;
+\end{lstlisting}
+
+\section{Item (f)}
+
+A atribuição de pinos foi feita via script Tcl, cobrindo as 4 entradas de \texttt{SW} e os 7 segmentos de \texttt{HEX3} conforme a tabela oficial de pinos da DE1:
+
+\begin{lstlisting}[language=tcl]
+package require ::quartus::project
+package require ::quartus::flow
+
+set project_name "demo_setup"
+
+project_new $project_name -overwrite
+
+set_global_assignment -name FAMILY "Cyclone II"
+set_global_assignment -name DEVICE EP2C20F484C7
+set_global_assignment -name VHDL_FILE a.vhd
+set_global_assignment -name VHDL_FILE ../01/conv_7seg.vhd
+set_global_assignment -name VHDL_FILE demo_setup.vhd
+set_global_assignment -name TOP_LEVEL_ENTITY demo_setup
+
+set_location_assignment PIN_L22 -to SW[0]
+set_location_assignment PIN_L21 -to SW[1]
+set_location_assignment PIN_M22 -to SW[2]
+set_location_assignment PIN_V12 -to SW[3]
+
+set_location_assignment PIN_F4 -to HEX3[0]
+set_location_assignment PIN_D5 -to HEX3[1]
+set_location_assignment PIN_D6 -to HEX3[2]
+set_location_assignment PIN_J4 -to HEX3[3]
+set_location_assignment PIN_L8 -to HEX3[4]
+set_location_assignment PIN_F3 -to HEX3[5]
+set_location_assignment PIN_D4 -to HEX3[6]
+
+export_assignments
+execute_flow -compile
+
+project_close
+\end{lstlisting}
+
+\end{document}

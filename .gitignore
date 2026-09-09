@@ -6,6 +6,12 @@
 # Saída de compilação/simulação do Quartus/ModelSim
 **/logos/**
 **/ignore/**
+**/db/**
+**.rpt
+**.summary
+**.qpf
+**.qsf
+
 projetos/*/output_files/
 projetos/*/db/
 projetos/*/incremental_db/

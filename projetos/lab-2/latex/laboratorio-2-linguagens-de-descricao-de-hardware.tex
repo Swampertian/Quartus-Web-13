@@ -31,7 +31,7 @@
 
 \section{Item (a) -- Decodificador decimal com detecção de erro}
 
-Cada bit de \texttt{SWITCH\_PINS} corresponde a um switch físico da DE1 (0 = chave para baixo, 1 = chave para cima), formando um número binário de 0 a 127. O decodificador mapeia esse valor diretamente para os segmentos ativos-baixo do display: as combinações de 0 a 9 acendem o dígito correspondente, e qualquer valor fora dessa faixa (10 a 127) acende o padrão da letra E.
+Cada bit de \texttt{SWITCH\_PINS} corresponde a um switch físico da DE1 (0 = chave para baixo, 1 = chave para cima), formando um número binário de 0 a 127. O decodificador mapeia esse valor diretamente para os segmentos do display: as combinações de 0 a 9 acendem o dígito correspondente, e qualquer valor fora dessa faixa (10 a 127) acende o padrão da letra E.
 
 \begin{lstlisting}[language=VHDL]
 library ieee;

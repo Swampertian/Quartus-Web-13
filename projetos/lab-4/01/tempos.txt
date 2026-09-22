@@ -1,0 +1,44 @@
+ITEM (i) — Tempos de atraso dos ripple-carry adders (itens e, f, g)
+=====================================================================
+
+Como foi medido:
+  1. quartus_sh -t compile_adder8.tcl    (idem para adder32 / adder64)
+  2. quartus_sta -t measure_delay.tcl adder8   (idem adder32 / adder64)
+  3. O passo 2 gera <projeto>_delay.rpt com a tabela "Propagation
+     Delay" (TimeQuest, comando report_datasheet) -- o atraso do
+     circuito inteiro e o MAIOR valor da tabela, ou seja, o pior
+     caminho combinacional entre um pino de entrada e um pino de
+     saida.
+  Rodado de verdade dentro do container Quartus (Cyclone II
+  EP2C20F484C7, Quartus II 13.0sp1).
+
+Resultados medidos:
+
+  Somador de  8 bits: 19.860 ns  (pior caminho: x[0] -> overflow)
+  Somador de 32 bits: 42.970 ns  (pior caminho: cin  -> overflow)
+  Somador de 64 bits: 71.831 ns  (pior caminho: y[0] -> overflow)
+
+Reflexao — relacao entre atraso e tamanho da entrada:
+
+  Em TODOS os 3 casos o pior caminho vai de um bit de entrada ate
+  o "overflow" -- que e exatamente o carry final, o sinal que
+  precisa atravessar TODOS os N full adders em cadeia (cada full
+  adder so calcula seu carry-out depois de receber o carry-in do
+  anterior). Por isso o atraso e dominado por essa cadeia de
+  carries, e cresce com N:
+
+    N= 8 -> 19.860 ns
+    N=32 -> 42.970 ns  (4x mais bits que N=8, atraso so ~2.16x maior)
+    N=64 -> 71.831 ns  (2x mais bits que N=32, atraso so ~1.67x maior)
+
+  O crescimento e claramente sub-linear em N (nao dobra o atraso
+  quando N dobra) porque parte do atraso de cada full adder e um
+  "custo fixo" de roteamento/logica que nao escala 1:1 com N nesta
+  ferramenta/dispositivo -- mas a TENDENCIA de crescimento com N
+  continua evidente, confirmando o motivo teorico do ripple-carry:
+  cada estagio novo adiciona mais um full adder na cadeia do
+  carry, entao o caminho critico so cresce conforme N aumenta.
+  Essa e a principal desvantagem do ripple-carry pra somas de
+  muitos bits (64, 128...) -- por isso existem somadores mais
+  rapidos (carry-lookahead, carry-select), que quebram essa
+  dependencia em cadeia pra reduzir o atraso.

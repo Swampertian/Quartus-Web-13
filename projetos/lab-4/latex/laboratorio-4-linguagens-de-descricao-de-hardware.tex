@@ -1,0 +1,361 @@
+\documentclass[report, 12pt]{uftreport}
+
+\usepackage{amsmath}
+
+\title{Laboratório 4 -- Somadores e ULA de 4 Bits}
+
+\author{Pedro Lucas}{Moreira}
+
+\advisor{Prof.}{Tiago}{Almeida}{}
+
+\department{CC}
+\class{Linguagens de Descrição de Hardware -- 2026/2}
+
+\date{22}{9}{2026}
+
+\keyword{VHDL}
+\keyword{Somador Ripple-Carry}
+\keyword{VHDL Estrutural}
+\keyword{Timing Analyzer}
+
+\begin{document}
+
+\frontmatter
+\maketitle
+\makefrontpage
+
+\mainmatter
+\ChapterStart{first}{Questão 1 -- Somadores Ripple-Carry}
+
+\chapter{Questão 1 -- Somadores Ripple-Carry}
+
+\section{Item (a) -- Somador completo de 1 bit (estrutural)}
+
+O somador completo foi implementado de forma estrutural, instanciando apenas portas lógicas básicas (\texttt{and2}, \texttt{or2}, \texttt{xor2}), sem nenhuma atribuição booleana direta. A soma é o XOR encadeado de \texttt{a}, \texttt{b} e \texttt{cin}; o carry-out é o OR entre o AND de \texttt{a} e \texttt{b} e o AND do carry-in com o XOR parcial de \texttt{a} e \texttt{b}.
+
+\begin{lstlisting}[language=VHDL]
+
+-- Primeira porta lógica: AND
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity gate_and2 is
+    port (
+        a, b : in  std_logic;
+        y    : out std_logic
+    );
+end entity gate_and2;
+
+architecture rtl of gate_and2 is
+begin
+    y <= a and b;
+end architecture rtl;
+
+
+-- Segunda porta lógica: OR
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity gate_or2 is
+    port (
+        a, b : in  std_logic;
+        y    : out std_logic
+    );
+end entity gate_or2;
+
+architecture rtl of gate_or2 is
+begin
+    y <= a or b;
+end architecture rtl;
+
+-- Terceira porta lógica: XOR
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity gate_xor2 is
+    port (
+        a, b : in  std_logic;
+        y    : out std_logic
+    );
+end entity gate_xor2;
+
+architecture rtl of gate_xor2 is
+begin
+    y <= a xor b;
+end architecture rtl;
+\end{lstlisting}
+
+Abaixo, um arquivo separado, intitulado \texttt{full\_adder.vhdl}, instancia as portas lógicas e mapeia as operações para a soma de 1 bit.
+Ao todo são usados 3 bits de entrada (\texttt{a}, \texttt{b} e \texttt{cin}), resultando em uma saída de 2 bits (\texttt{s} e \texttt{cout}).
+
+
+
+\begin{lstlisting}[language=VHDL]
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity full_adder is
+    port (
+        a, b, cin : in  std_logic;
+        s, cout   : out std_logic
+    );
+end entity full_adder;
+
+architecture structural of full_adder is
+    signal a_xor_b   : std_logic;
+    signal a_and_b   : std_logic;
+    signal cin_and_x : std_logic;
+begin
+    xor_ab: entity work.gate_xor2
+        port map (a => a, b => b, y => a_xor_b);
+
+    and_ab: entity work.gate_and2
+        port map (a => a, b => b, y => a_and_b);
+
+    xor_final: entity work.gate_xor2
+        port map (a => a_xor_b, b => cin, y => s);
+
+    and_cin: entity work.gate_and2
+        port map (a => cin, b => a_xor_b, y => cin_and_x);
+
+    or_carry: entity work.gate_or2
+        port map (a => a_and_b, b => cin_and_x, y => cout);
+
+end architecture structural;
+\end{lstlisting}
+
+\section{Item (b) -- Simulação do somador completo}
+
+A simulação aplica sequencialmente as 8 combinações possíveis de \texttt{a}, \texttt{b} e \texttt{cin}, com 10 ns entre cada estímulo. Ela foi executada via script \texttt{sim.do}, gerando o arquivo de onda \texttt{full\_adder.vcd}.
+
+Arquivo \texttt{tb\_full\_adder.vhdl}, usado para a simulação:
+
+\begin{lstlisting}[language=VHDL]
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity tb_full_adder is
+end entity tb_full_adder;
+
+architecture sim of tb_full_adder is
+    signal a, b, cin : std_logic;
+    signal s, cout   : std_logic;
+begin
+    uut: entity work.full_adder
+        port map (
+            a    => a,
+            b    => b,
+            cin  => cin,
+            s    => s,
+            cout => cout
+        );
+
+    stim: process
+    begin
+        a <= '0'; b <= '0'; cin <= '0'; wait for 10 ns; -- 000
+        a <= '0'; b <= '0'; cin <= '1'; wait for 10 ns; -- 001
+        a <= '0'; b <= '1'; cin <= '0'; wait for 10 ns; -- 010
+        a <= '0'; b <= '1'; cin <= '1'; wait for 10 ns; -- 011
+        a <= '1'; b <= '0'; cin <= '0'; wait for 10 ns; -- 100
+        a <= '1'; b <= '0'; cin <= '1'; wait for 10 ns; -- 101
+        a <= '1'; b <= '1'; cin <= '0'; wait for 10 ns; -- 110
+        a <= '1'; b <= '1'; cin <= '1'; wait for 10 ns; -- 111
+        wait;
+    end process;
+
+end architecture sim;
+\end{lstlisting}
+
+\section{Item (c) -- Ripple-carry adder de 4 bits}
+
+O somador de 4 bits encadeia quatro instâncias do \texttt{full\_adder} do item (a) usando \texttt{generate}: o carry-out de cada estágio alimenta o carry-in do próximo. Os operandos \texttt{x} e \texttt{y} são tratados como números sem sinal de 4 bits, de modo que o overflow é exatamente o carry-out do último estágio (\texttt{carry(4)}).
+
+\begin{lstlisting}[language=VHDL]
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity ripple_carry_adder4 is
+    port (
+        x, y     : in  std_logic_vector(3 downto 0);
+        cin      : in  std_logic;
+        sum      : out std_logic_vector(3 downto 0);
+        overflow : out std_logic
+    );
+end entity ripple_carry_adder4;
+
+architecture structural of ripple_carry_adder4 is
+    signal carry : std_logic_vector(4 downto 0);
+begin
+    carry(0) <= cin;
+
+    fa_gen: for i in 0 to 3 generate
+        fa_inst: entity work.full_adder
+            port map (
+                a    => x(i),
+                b    => y(i),
+                cin  => carry(i),
+                s    => sum(i),
+                cout => carry(i + 1)
+            );
+    end generate fa_gen;
+
+    overflow <= carry(4);
+
+end architecture structural;
+\end{lstlisting}
+
+\section{Item (d) -- Instanciação no demo\_setup}
+
+O somador \texttt{ripple\_carry\_adder4} foi instanciado no \texttt{demo\_setup}. Os 8 \textit{toggle switches} são divididos em duas entradas de 4 bits (\texttt{SW(3 downto 0)} = \texttt{x}, \texttt{SW(7 downto 4)} = \texttt{y}), a soma é decodificada no display hexadecimal e o overflow acende um LED.
+
+\begin{lstlisting}[language=VHDL]
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity demo_setup is
+    port (
+        SW    : in  std_logic_vector(7 downto 0);
+        HEX3  : out std_logic_vector(6 downto 0);
+        LEDR0 : out std_logic
+    );
+end entity demo_setup;
+
+architecture rtl of demo_setup is
+    signal sum_result   : std_logic_vector(3 downto 0);
+    signal overflow_bit : std_logic;
+begin
+    adder_inst: entity work.ripple_carry_adder4
+        port map (
+            x        => SW(3 downto 0),
+            y        => SW(7 downto 4),
+            cin      => '0',
+            sum      => sum_result,
+            overflow => overflow_bit
+        );
+
+    seg_inst: entity work.conv_7seg
+        port map (
+            HEX_IN  => sum_result,
+            HEX_OUT => HEX3
+        );
+
+    LEDR0 <= overflow_bit;
+
+end architecture rtl;
+\end{lstlisting}
+
+\section{Itens (e), (f) e (g) -- Ripple-carry de 8, 32 e 64 bits}
+
+Os somadores de 8, 32 e 64 bits seguem exatamente a mesma estrutura do item (c), apenas variando a largura dos vetores e o número de \texttt{full\_adder} encadeados no \texttt{generate}. O overflow continua sendo o carry-out do último estágio.
+
+\begin{lstlisting}[language=VHDL]
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity adder8 is
+    port (
+        x, y     : in  std_logic_vector(7 downto 0);
+        cin      : in  std_logic;
+        sum      : out std_logic_vector(7 downto 0);
+        overflow : out std_logic
+    );
+end entity adder8;
+
+architecture structural of adder8 is
+    signal carry : std_logic_vector(8 downto 0);
+begin
+    carry(0) <= cin;
+
+    fa_gen: for i in 0 to 7 generate
+        fa_inst: entity work.full_adder
+            port map (
+                a    => x(i),
+                b    => y(i),
+                cin  => carry(i),
+                s    => sum(i),
+                cout => carry(i + 1)
+            );
+    end generate fa_gen;
+
+    overflow <= carry(8);
+
+end architecture structural;
+\end{lstlisting}
+
+Os somadores de 32 e 64 bits (\texttt{adder32.vhdl} e \texttt{adder64.vhdl}) têm arquitetura idêntica à do \texttt{adder8}, apenas com os vetores estendidos para 32 e 64 bits, respectivamente, e o \texttt{generate} percorrendo \texttt{0 to 31} ou \texttt{0 to 63}.
+
+Cada somador foi compilado em um projeto Quartus próprio (\texttt{compile\_adder8.tcl}, \texttt{compile\_adder32.tcl}, \texttt{compile\_adder64.tcl}, todos para a família Cyclone II, dispositivo \texttt{EP2C20F484C7}), e o atraso combinacional foi medido com o TimeQuest Timing Analyzer via \texttt{measure\_delay.tcl}, que gera o relatório de \textit{Propagation Delay} (\texttt{report\_datasheet}) para cada projeto já compilado.
+
+\section{Item (h)}
+
+Nao sei
+
+\section{Item (i) -- Relação entre atraso e tamanho da entrada}
+
+Os tempos de atraso combinacional foram medidos dentro do container Quartus (Cyclone II EP2C20F484C7, Quartus II 13.0sp1), compilando cada projeto e em seguida rodando o TimeQuest (\texttt{report\_datasheet}). O atraso do circuito inteiro é o maior valor da tabela de \textit{Propagation Delay}, ou seja, o pior caminho combinacional entre uma entrada e uma saída:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Somador & Atraso medido & Pior caminho \\
+\midrule
+8 bits  & 19{,}860 ns & x[0] $\rightarrow$ overflow \\
+32 bits & 42{,}970 ns & cin $\rightarrow$ overflow \\
+64 bits & 71{,}831 ns & y[0] $\rightarrow$ overflow \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+O atraso cresce com $N$, porém de forma sub-linear: de 8 para 32 bits (4$\times$ mais bits) o atraso sobe apenas $\sim$2,16$\times$; de 32 para 64 bits (2$\times$ mais bits) sobe apenas $\sim$1,67$\times$. Isso acontece porque o caminho crítico é sempre a cadeia de carries até o \textit{overflow}, e cada \textit{full adder} adicionado só aumenta esse caminho em um estágio.
+
+\ChapterStart{second}{Questão 2 -- ULA de 4 Bits}
+
+\chapter{Questão 2 -- ULA de 4 Bits}
+
+\section{Item (a) -- Display de números negativos}
+
+Para mostrar números negativos de 4 bits (complemento de 2) em decimal, o circuito primeiro verifica o bit de sinal. Se for negativo, o valor é complementado (invertido e somado a 1) para obter a magnitude, e um LED indica o sinal; caso contrário, a magnitude é o próprio valor. A magnitude (0 a 8) é então decodificada para o display de 7 segmentos, do mesmo jeito que nos displays decimais anteriores.
+
+\begin{lstlisting}[language=VHDL]
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity display_signed is
+    port (
+        VALUE_IN : in  std_logic_vector(3 downto 0);
+        HEX_OUT  : out std_logic_vector(6 downto 0);
+        SIGN_LED : out std_logic
+    );
+end entity display_signed;
+
+architecture rtl of display_signed is
+    signal magnitude : unsigned(3 downto 0);
+begin
+    process (VALUE_IN)
+    begin
+        if VALUE_IN(3) = '1' then
+            magnitude <= unsigned(not VALUE_IN) + 1;
+            SIGN_LED  <= '1';
+        else
+            magnitude <= unsigned(VALUE_IN);
+            SIGN_LED  <= '0';
+        end if;
+    end process;
+
+    with std_logic_vector(magnitude) select
+        HEX_OUT <= "1000000" when "0000", -- 0
+                    "1111001" when "0001", -- 1
+                    "0100100" when "0010", -- 2
+                    "0110000" when "0011", -- 3
+                    "0011001" when "0100", -- 4
+                    "0010010" when "0101", -- 5
+                    "0000010" when "0110", -- 6
+                    "1111000" when "0111", -- 7
+                    "0000000" when "1000", -- 8
+                    "1111111" when others;
+
+end architecture rtl;
+\end{lstlisting}
+
+\end{document}

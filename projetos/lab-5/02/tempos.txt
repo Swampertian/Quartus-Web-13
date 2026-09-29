@@ -1,0 +1,104 @@
+QUESTAO 2 — Analise de tempos dos itens (a), (b) e (c)
+=====================================================================
+
+ITEM (a) — CLA de 4 bits x ripple-carry de 4 bits (lab-4)
+=====================================================================
+
+Como foi medido:
+  1. quartus_sh -t compile_cla4.tcl   (cla_adder_4bit, a.vhdl)
+     quartus_sh -t compile_rca4.tcl   (ripple_carry_adder4 do lab-4/01)
+  2. quartus_sta -t measure_delay.tcl cla_adder_4bit
+     quartus_sta -t measure_delay.tcl ripple_carry_adder4
+  3. O passo 2 gera <projeto>_delay.rpt com a tabela "Propagation
+     Delay" (TimeQuest, report_datasheet). O atraso do circuito e o
+     MAIOR valor da tabela (caminho critico pino -> pino).
+  Os dois projetos compilados nas mesmas condicoes: top-level
+  isolado, sem pinos fixos, Cyclone II EP2C20F484C7, Quartus II
+  13.0sp1 (container Docker).
+
+Simulacao funcional (sim.do, ModelSim):
+  Testbench exaustivo com as 512 combinacoes de A, B e Cin,
+  comparando {Cout, S} com A + B + Cin: 0 erro(s).
+
+Resultados medidos:
+
+  Somador                 Caminho critico     Atraso      LEs
+  ----------------------  ------------------  ----------  ---
+  CLA 4 bits              B[2] -> Cout        13.129 ns   15
+  Ripple-carry 4 bits     y[2] -> overflow    12.475 ns   10
+
+  Menor tempo: ripple-carry (0.654 ns a menos, ~5%).
+
+Por que o CLA nao ganhou em 4 bits:
+
+  - Em ambos o caminho critico termina no carry-out, como esperado.
+  - O Quartus nao implementa as portas como foram escritas: a sintese
+    reduz as duas descricoes a funcoes logicas e as mapeia em LUTs de
+    4 entradas. Com so 9 entradas (A, B, Cin), os dois somadores
+    viram redes de LUTs de profundidade parecida, e a estrutura
+    "ripple" ou "lookahead" do VHDL praticamente desaparece.
+  - A maior parte dos ~12-13 ns e atraso fixo de buffers de E/S e
+    roteamento ate os pinos, igual para os dois. A diferenca de
+    logica entre eles fica na mesma ordem da variacao de
+    posicionamento/roteamento do fitter.
+  - O CLA usou mais LEs (15 contra 10) por causa das equacoes de
+    carry expandidas, o que espalha mais a logica no chip.
+
+  A vantagem do CLA (carry em tempo constante, sem esperar a cadeia)
+  so aparece quando N cresce: no ripple-carry o atraso cresce com N
+  (lab-4: 19.860 ns em 8 bits, 71.831 ns em 64 bits). Os itens (b) e
+  (c) comparam em 8 bits.
+
+
+ITEM (b) e (c) — Somadores de 8 bits
+=====================================================================
+
+Como foi medido (mesmo processo do item a):
+  quartus_sh -t compile_cla8_parcial.tcl  (b.vhdl, cla_adder_8bit_with_4bit)
+  quartus_sh -t compile_cla8_puro.tcl     (c.vhdl, cla_adder_8bit)
+  quartus_sh -t compile_rca8.tcl          (adder8 do lab-4/01)
+  quartus_sta -t measure_delay.tcl <projeto>   (para cada um)
+
+  O ripple-carry de 8 bits foi recompilado aqui e deu 19.860 ns,
+  exatamente o valor medido no lab-4, confirmando que as condicoes
+  de medicao sao as mesmas.
+
+Simulacao funcional (ModelSim): testbench exaustivo com as 131072
+combinacoes de A, B e Cin para b.vhdl e c.vhdl: 0 erro(s) em ambos.
+
+Resultados medidos:
+
+  Somador                     Caminho critico        Atraso      LEs
+  --------------------------  ---------------------  ----------  ---
+  Ripple-carry 8 bits (lab-4) x[0] -> overflow       19.860 ns   18
+  CLA parcial 8 bits (b)      A[0] -> Cout_half_2    16.087 ns   34
+  CLA puro 8 bits (c)         B[2] -> S[6]           15.880 ns   42
+
+  Menor tempo: CLA puro (c).
+
+Analise:
+
+  (b) CLA parcial x ripple-carry: 3.773 ns a menos (~19%).
+      Em 8 bits o ripple-carry ja precisa propagar o carry por 8
+      full adders, e o atraso cresce. No CLA parcial o carry so
+      "ondula" entre dois blocos: dentro de cada bloco de 4 bits
+      os carries sao calculados em paralelo, e o unico elo em serie
+      e C(4), que liga o CLA 1 ao CLA 2. O caminho critico continua
+      sendo do bit 0 ate o carry final, atravessando essa cascata.
+
+  (c) CLA puro x CLA parcial: 0.207 ns a menos (~1%).
+      CLA puro x ripple-carry: 3.980 ns a menos (~20%).
+      No CLA puro nenhum carry depende de outro carry: C(8) e
+      calculado direto de G, P e Cin. Isso elimina o elo C(4) da
+      cascata, e o caminho critico deixa de terminar no carry-out
+      (agora e B[2] -> S[6]). O ganho sobre o CLA parcial e pequeno
+      porque a sintese ja reorganiza as duas descricoes em LUTs de
+      4 entradas, e C(8) com 17 entradas precisa de varios niveis
+      de LUT de qualquer forma.
+
+  Custo em area: o CLA puro usa 42 LEs, contra 34 do parcial e 18
+  do ripple-carry. As equacoes de carry expandidas crescem com N
+  (C(8) tem 9 termos, o maior com 9 entradas), entao o CLA troca
+  area por velocidade. Por isso, para N grande, costuma-se usar CLA
+  em blocos (como no item b) ou CLA hierarquico, em vez de expandir
+  todos os carries.

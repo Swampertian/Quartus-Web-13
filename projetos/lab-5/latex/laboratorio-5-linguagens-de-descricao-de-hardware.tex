@@ -31,7 +31,7 @@
 
 \chapter{Questão 1 -- Barrel Shifter de 4 Bits}
 
-A rotação binária reposiciona os bits de uma palavra de forma circular, mantendo a ordem. Dada a palavra $W = w_3w_2w_1w_0$ e o valor de rotacionamento $S = s_1s_0$, a saída $Y = y_3y_2y_1y_0$ segue a Tabela~\ref{tab:barrel}.
+A rotação binária reposiciona os bits de uma palavra de forma circular, mantendo a ordem. Para a palavra $W = w_3w_2w_1w_0$ e a rotação $S = s_1s_0$, a saída $Y = y_3y_2y_1y_0$ segue a Tabela~\ref{tab:barrel}.
 
 \begin{table}[htb]
   \centering
@@ -49,15 +49,9 @@ A rotação binária reposiciona os bits de uma palavra de forma circular, mante
   \end{tabular}
 \end{table}
 
-Observando cada coluna da tabela, cada bit de saída é sempre um bit da entrada deslocado de $S$ posições:
-
-\[
-  y_i = w_{(i + S) \bmod 4}, \qquad i \in \{0, 1, 2, 3\}
-\]
 
 \section{Item (a) -- Implementação em VHDL}
 
-Seguindo a dica do enunciado, cada bit de saída foi implementado como um multiplexador 4:1, com \texttt{ROTATION\_IN} ($S$) como seletor e os quatro bits de \texttt{WORD\_IN} ($W$) como entradas de dados. Cada multiplexador é descrito por uma atribuição \texttt{with ... select}, cuja ordem das entradas é tirada diretamente da coluna correspondente da Tabela~\ref{tab:barrel}.
 
 Arquivo \texttt{a.vhdl}:
 
@@ -169,39 +163,9 @@ Resultados esperados, obtidos a partir da Tabela~\ref{tab:barrel}:
   \end{tabular}
 \end{table}
 
-% TODO: inserir a forma de onda da simulação
-% \begin{figure}[htb]
-%   \centering
-%   \includegraphics[width=0.9\textwidth]{../01/simulacao.png}
-%   \caption{Forma de onda da simulação do \textit{barrel shifter}.}
-%   \label{fig:sim}
-% \end{figure}
-
 \section{Item (b) -- Execução na DE1 com o demo\_setup}
 
 O \texttt{rotation\_binary} foi instanciado no \texttt{demo\_setup}. Os \textit{switches} \texttt{SW(3 downto 0)} fornecem a palavra $W$, \texttt{SW(5 downto 4)} fornecem o rotacionamento $S$, e a saída $Y$ é exibida nos LEDs vermelhos \texttt{LEDR3} a \texttt{LEDR0}.
-
-\begin{table}[htb]
-  \centering
-  \caption{Mapeamento de entradas e saídas na DE1.}
-  \label{tab:pinos}
-  \begin{tabular}{lll}
-    \toprule
-    Sinal & Função & Pino \\
-    \midrule
-    \texttt{SW[0]} & $w_0$ & \texttt{PIN\_L22} \\
-    \texttt{SW[1]} & $w_1$ & \texttt{PIN\_L21} \\
-    \texttt{SW[2]} & $w_2$ & \texttt{PIN\_M22} \\
-    \texttt{SW[3]} & $w_3$ & \texttt{PIN\_V12} \\
-    \texttt{SW[4]} & $s_0$ & \texttt{PIN\_W12} \\
-    \texttt{SW[5]} & $s_1$ & \texttt{PIN\_U12} \\
-    \texttt{LEDR0} & $y_0$ & \texttt{PIN\_R20} \\
-    \texttt{LEDR1} & $y_1$ & \texttt{PIN\_R19} \\
-    \texttt{LEDR2} & $y_2$ & \texttt{PIN\_U19} \\
-    \texttt{LEDR3} & $y_3$ & \texttt{PIN\_Y19} \\
-    \bottomrule
-  \end{tabular}
-\end{table}
 
 Arquivo \texttt{b.vhdl}:
 
@@ -237,34 +201,11 @@ begin
 end architecture rtl;
 \end{lstlisting}
 
-% TODO: inserir foto da placa em funcionamento
-% \begin{figure}[htb]
-%   \centering
-%   \includegraphics[width=0.7\textwidth]{../01/placa.jpg}
-%   \caption{\textit{Barrel shifter} em execução na DE1.}
-%   \label{fig:placa}
-% \end{figure}
-
 \chapter{Questão 2 -- Somador Carry Look-Ahead}
 
 \section{Item (a) -- CLA de 4 bits}
 
-O somador \textit{carry look-ahead} (CLA) calcula todos os carries em paralelo, em vez de esperar o carry atravessar cada estágio como no \textit{ripple-carry}. Para cada bit $i$ são definidos os termos de geração e propagação:
-
-\[
-  G_i = A_i \cdot B_i, \qquad P_i = A_i \oplus B_i
-\]
-
-A partir deles, cada carry é expandido em função apenas de $G$, $P$ e $C_0 = C_{in}$:
-
-\begin{align*}
-  C_1 &= G_0 + P_0 C_0 \\
-  C_2 &= G_1 + P_1 G_0 + P_1 P_0 C_0 \\
-  C_3 &= G_2 + P_2 G_1 + P_2 P_1 G_0 + P_2 P_1 P_0 C_0 \\
-  C_4 &= G_3 + P_3 G_2 + P_3 P_2 G_1 + P_3 P_2 P_1 G_0 + P_3 P_2 P_1 P_0 C_0
-\end{align*}
-
-A soma de cada bit é $S_i = P_i \oplus C_i$ e o carry-out é $C_{out} = C_4$.
+O somador \textit{carry look-ahead} (CLA) calcula todos os carries em paralelo, em vez de esperar o carry atravessar cada estágio como no \textit{ripple-carry}.
 
 Arquivo \texttt{a.vhdl}:
 
@@ -328,7 +269,7 @@ end architecture rtl;
 
 \subsection{Simulação}
 
-A simulação é exaustiva: percorre as 512 combinações de \texttt{A}, \texttt{B} e \texttt{Cin}, com 10 ns entre cada estímulo, e compara \texttt{\{Cout, S\}} com o valor de $A + B + C_{in}$ calculado via \texttt{numeric\_std}. Foi executada via script \texttt{sim.do}, gerando o arquivo de onda \texttt{cla\_adder\_4bit.vcd}. O resultado foi \textbf{0 erros} nas 512 combinações.
+A simulação percorre as 512 combinações de \texttt{A}, \texttt{B} e \texttt{Cin}, com 10 ns entre cada estímulo. O resultado foi \textbf{0 erros} nas 512 combinações.
 
 Arquivo \texttt{tb\_cla\_adder\_4bit.vhdl}, usado para a simulação:
 
@@ -394,7 +335,7 @@ end architecture sim;
 
 \subsection{Comparação de tempo com o ripple-carry de 4 bits}
 
-O CLA e o \texttt{ripple\_carry\_adder4} do laboratório anterior foram compilados nas mesmas condições: \textit{top-level} isolado, sem pinos fixos, no Cyclone II EP2C20F484C7. O atraso foi medido com o TimeQuest (\texttt{report\_datasheet}, tabela \textit{Propagation Delay}), e o atraso do circuito é o maior valor dessa tabela.
+O CLA e o \texttt{ripple\_carry\_adder4} do laboratório anterior foram compilados nas mesmas condições.
 
 \begin{table}[htb]
   \centering
@@ -410,9 +351,7 @@ O CLA e o \texttt{ripple\_carry\_adder4} do laboratório anterior foram compilad
   \end{tabular}
 \end{table}
 
-Em 4 bits, o \textit{ripple-carry} teve o menor tempo, 0{,}654 ns (cerca de 5\%) a menos que o CLA. Em ambos o caminho crítico termina no carry-out, como esperado.
-
-O resultado se explica pela forma como o Quartus sintetiza o circuito. As portas não são implementadas como foram descritas: a síntese reduz as duas descrições a funções lógicas e as mapeia em LUTs de 4 entradas. Com apenas 9 entradas (\texttt{A}, \texttt{B} e \texttt{Cin}), os dois somadores viram redes de LUTs de profundidade parecida, e a diferença estrutural entre \textit{ripple} e \textit{lookahead} praticamente desaparece. A maior parte dos cerca de 12 ns é atraso fixo de buffers de entrada/saída e roteamento até os pinos, igual para os dois. Além disso, as equações de carry expandidas fazem o CLA ocupar mais elementos lógicos (15 contra 10), espalhando mais a lógica no chip.
+Em 4 bits, o \textit{ripple-carry} teve o menor tempo, 0{,}654 ns (cerca de 5\%) a menos que o CLA. 
 
 A vantagem do CLA aparece quando o número de bits cresce: no \textit{ripple-carry} o atraso aumenta com $N$ (no laboratório anterior, 19{,}860 ns em 8 bits e 71{,}831 ns em 64 bits), enquanto no CLA o carry não depende da cadeia de estágios anteriores.
 
@@ -443,12 +382,6 @@ Arquivo \texttt{demo\_setup.vhd}:
 library ieee;
 use ieee.std_logic_1164.all;
 
--- ITEM (a): instancia o cla_adder_4bit na placa DE1.
---   SW(3 downto 0) = entrada A
---   SW(7 downto 4) = entrada B
---   SW(8)          = Cin
---   LEDR3..LEDR0   = soma S
---   LEDR4          = Cout
 entity demo_setup is
     port (
         SW    : in  std_logic_vector(8 downto 0);
@@ -484,16 +417,7 @@ end architecture rtl;
 
 \section{Item (b) -- CLA parcial de 8 bits}
 
-O somador de 8 bits com CLA parcial é formado por dois blocos CLA de 4 bits ligados em cascata: o carry-out do bloco menos significativo, $C_4$, é o carry-in do bloco mais significativo. Dentro de cada bloco os carries são calculados em paralelo; o único elo em série é $C_4$. As equações do segundo bloco são as do primeiro deslocadas de 4 bits, com $C_4$ no lugar de $C_0$:
-
-\begin{align*}
-  C_5 &= G_4 + P_4 C_4 \\
-  C_6 &= G_5 + P_5 G_4 + P_5 P_4 C_4 \\
-  C_7 &= G_6 + P_6 G_5 + P_6 P_5 G_4 + P_6 P_5 P_4 C_4 \\
-  C_8 &= G_7 + P_7 G_6 + P_7 P_6 G_5 + P_7 P_6 P_5 G_4 + P_7 P_6 P_5 P_4 C_4
-\end{align*}
-
-Os cálculos de $G$, $P$ e da soma usam \texttt{for ... generate}, para que cada bloco dirija apenas os seus bits dos vetores. A saída \texttt{Cout\_half\_1} expõe o carry entre os blocos ($C_4$) e \texttt{Cout\_half\_2} é o carry-out final ($C_8$).
+O somador de 8 bits com CLA parcial é formado por dois blocos CLA de 4 bits ligados em cascata: o carry-out do bloco menos significativo, $C_4$, é o carry-in do bloco mais significativo. Dentro de cada bloco os carries são calculados em paralelo; o único elo em série é $C_4$. A saída \texttt{Cout\_half\_1} expõe o carry entre os blocos ($C_4$) e \texttt{Cout\_half\_2} é o carry-out final ($C_8$).
 
 Arquivo \texttt{b.vhdl}:
 
@@ -577,21 +501,9 @@ begin
 end architecture rtl;
 \end{lstlisting}
 
-A implementação foi verificada com um testbench exaustivo, nos mesmos moldes do item (a), percorrendo as 131.072 combinações de \texttt{A}, \texttt{B} e \texttt{Cin}: 0 erros.
-
 \section{Item (c) -- CLA puro de 8 bits}
 
-No CLA puro não há nenhuma ligação em cascata: as equações de carry do item (a) são estendidas até $C_8$, e todo carry é escrito apenas em função de $G$, $P$ e $C_0$. De forma geral:
-
-\[
-  C_{k} = G_{k-1} + \sum_{j=0}^{k-2} \left( \prod_{m=j+1}^{k-1} P_m \right) G_j + \left( \prod_{m=0}^{k-1} P_m \right) C_0
-\]
-
-Por exemplo, o carry-out final é:
-
-\[
-  C_8 = G_7 + P_7 G_6 + P_7 P_6 G_5 + \dots + P_7 P_6 P_5 P_4 P_3 P_2 P_1 G_0 + P_7 P_6 P_5 P_4 P_3 P_2 P_1 P_0 C_0
-\]
+Todos os carries até $C_8$ são expandidos diretamente em função de $G$, $P$ e $C_{in}$, sem cascata entre blocos.
 
 Arquivo \texttt{c.vhdl}:
 
@@ -687,7 +599,7 @@ begin
 end architecture rtl;
 \end{lstlisting}
 
-Assim como no item (b), a implementação foi verificada com as 131.072 combinações de entrada: 0 erros.
+Os itens (b) e (c) foram verificados com \textit{testbench} exaustivo (131.072 combinações de \texttt{A}, \texttt{B} e \texttt{Cin}): 0 erros.
 
 \section{Análise de tempos dos somadores de 8 bits}
 
@@ -715,10 +627,6 @@ O menor tempo é o do \textbf{CLA puro}. Diferente do resultado em 4 bits, em 8 
   \item \textbf{CLA puro $\times$ CLA parcial:} 0{,}207 ns a menos (cerca de 1\%). Como nenhum carry depende de outro carry, o elo $C_4$ deixa de existir, e o caminho crítico passa a terminar em um bit da soma (\texttt{S[6]}) e não mais no carry-out. O ganho é pequeno porque a síntese já reorganiza as duas descrições em LUTs de 4 entradas, e $C_8$, com 17 entradas, precisa de vários níveis de LUT em qualquer das duas formas.
   \item \textbf{CLA puro $\times$ ripple-carry:} 3{,}980 ns a menos (cerca de 20\%).
 \end{itemize}
-
-A velocidade tem custo em área. O CLA puro ocupa 42 elementos lógicos, contra 34 do parcial e 18 do \textit{ripple-carry}, porque as equações de carry expandidas crescem com o número de bits ($C_8$ já tem 9 termos, o maior com 9 entradas). Por isso, para somadores maiores, costuma-se usar o CLA em blocos, como no item (b), ou de forma hierárquica, em vez de expandir todos os carries.
-
-A análise completa dos tempos dos itens (a), (b) e (c) também está no arquivo \texttt{tempos.txt}.
 
 \backmatter
 

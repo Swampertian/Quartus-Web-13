@@ -1,0 +1,201 @@
+\documentclass[report, 12pt]{uftreport}
+
+\usepackage{amsmath}
+
+\title{Laboratório 3 -- \textit{Crossbar Switch} e Multiplexadores}
+
+\author{Pedro Lucas}{Moreira}
+
+\advisor{Prof.}{Tiago}{Almeida}{}
+
+\department{CC}
+\class{Linguagens de Descrição de Hardware -- 2026/2}
+
+\date{13}{10}{2026}
+
+\keyword{VHDL}
+\keyword{Crossbar Switch}
+\keyword{GENERIC e GENERATE}
+\keyword{Decodificador}
+
+\begin{document}
+
+\frontmatter
+\maketitle
+\makefrontpage
+
+\mainmatter
+\ChapterStart{first}{Questão 1 -- \textit{Crossbar Switch}}
+
+\chapter{Questão 1 -- \textit{Crossbar Switch}}
+
+O componente \texttt{xbar} possui duas entradas de dados ($x_1$, $x_2$), um bit de controle $S$ e duas saídas ($y_1$, $y_2$). Com $S = 0$ os dados passam direto ($y_1 = x_1$, $y_2 = x_2$); com $S = 1$ eles se cruzam ($y_1 = x_2$, $y_2 = x_1$).
+
+Para que o mesmo código possa ser gravado na placa DE1, as portas usam os nomes da pinagem definida no \texttt{compile.tcl}:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Sinal & Porta VHDL & Pino \\
+\midrule
+$x_1$ & \texttt{SWITCH\_PINS(0)} (SW0) & PIN\_L22 \\
+$x_2$ & \texttt{SWITCH\_PINS(1)} (SW1) & PIN\_L21 \\
+$S$   & \texttt{SWITCH\_PINS(2)} (SW2) & PIN\_M22 \\
+$y_1$ & \texttt{LEDR0} & PIN\_R20 \\
+$y_2$ & \texttt{LEDR1} & PIN\_R19 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Item (a) -- \texttt{WITH}, \texttt{SELECT} e \texttt{WHEN}}
+
+Cada saída é escolhida por uma atribuição selecionada controlada por $S$.
+
+\lstinputlisting[language=VHDL]{../01/a.vhdl}
+
+\section{Item (b) -- \texttt{WHEN} \texttt{ELSE}}
+
+Mesmo circuito com atribuição condicional: uma linha por saída.
+
+\lstinputlisting[language=VHDL]{../01/b.vhdl}
+
+\section{Item (c) -- \texttt{PROCESS}}
+
+Mesmo circuito dentro de um processo. Como todas as entradas estão na lista de sensibilidade e as duas saídas recebem valor nos dois ramos do \texttt{if}, o circuito continua puramente combinacional.
+
+\lstinputlisting[language=VHDL]{../01/c.vhdl}
+
+\section{Simulação dos itens (a), (b) e (c)}
+
+As três versões têm a mesma \textit{entity} (\texttt{crossbar\_switch}), então um único testbench serve para todas; os scripts \texttt{a.do}, \texttt{b.do} e \texttt{c.do} mudam apenas o arquivo compilado. O testbench percorre as 8 combinações de entrada, com 10 ns entre cada uma.
+
+\lstinputlisting[language=VHDL]{../01/tb_crossbar_switch.vhdl}
+
+As três simulações (ModelSim, arquivos \texttt{a.vcd}, \texttt{b.vcd} e \texttt{c.vcd}) produziram exatamente o mesmo resultado:
+
+\begin{center}
+\begin{tabular}{ccc|cc|l}
+\toprule
+$S$ & $x_2$ & $x_1$ & $y_1$ & $y_2$ & Modo \\
+\midrule
+0 & 0 & 0 & 0 & 0 & direto \\
+0 & 0 & 1 & 1 & 0 & direto \\
+0 & 1 & 0 & 0 & 1 & direto \\
+0 & 1 & 1 & 1 & 1 & direto \\
+1 & 0 & 0 & 0 & 0 & cruzado \\
+1 & 0 & 1 & 0 & 1 & cruzado \\
+1 & 1 & 0 & 1 & 0 & cruzado \\
+1 & 1 & 1 & 1 & 1 & cruzado \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Item (d) -- Cascata com \texttt{GENERIC} e \texttt{GENERATE}}
+
+A \textit{entity} \texttt{xbar\_chain} recebe o número de estágios pelo \texttt{generic N}. Os vetores \texttt{top} e \texttt{bot} representam as linhas de cima e de baixo entre os estágios: a entrada do primeiro estágio é VCC (\texttt{'1'}) em cima e GND (\texttt{'0'}) embaixo, e o \texttt{for generate} instancia $N$ cópias do \texttt{crossbar\_switch} do item (a), cada uma controlada por uma chave $S_i$. A saída $y_1$ do último estágio vai para o LED.
+
+\lstinputlisting[language=VHDL]{../01/d.vhd}
+
+Cada chave ligada troca as linhas de lugar. Assim, o valor de VCC volta para a linha de cima sempre que um número \textbf{par} de chaves estiver ligado, ou seja, $\text{LED} = \overline{S_0 \oplus S_1 \oplus \cdots \oplus S_{N-1}}$. Por isso, mudar qualquer chave sozinha inverte o estado do LED, que é o comportamento do interruptor de corredor citado no enunciado.
+
+O testbench (\texttt{tb\_xbar\_chain.vhdl}, com $N = 5$) confirmou esse comportamento:
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+$S_4 \ldots S_0$ & Chaves ligadas & LED \\
+\midrule
+00000 & 0 & 1 \\
+00001 & 1 & 0 \\
+00011 & 2 & 1 \\
+10101 & 3 & 0 \\
+11110 & 4 & 1 \\
+11111 & 5 & 0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Item (e) -- \texttt{demo\_setup} com 5 estágios}
+
+O \texttt{demo\_setup} instancia o \texttt{xbar\_chain} com \texttt{N => 5}, ligando SW0 a SW4 nas chaves $S_0$ a $S_4$ e a saída no LEDR0. O projeto (\texttt{compile-2.tcl}, projeto \texttt{demo\_setup\_5}) compilou sem erros e ocupou 2 elementos lógicos: o sintetizador reduz toda a cascata de multiplexadores ao XNOR das 5 chaves, como mostra o \textit{netlist} no RTL Viewer.
+
+\lstinputlisting[language=VHDL]{../01/e.vhdl}
+
+\section{Item (f) -- \texttt{demo\_setup} com 8 estágios}
+
+Igual ao item (e), alterando apenas \texttt{N => 8} e o tamanho do vetor de chaves (SW0 a SW7). O projeto (\texttt{compile-3.tcl}, projeto \texttt{demo\_setup\_8}) compilou sem erros e ocupou 3 elementos lógicos.
+
+\lstinputlisting[language=VHDL]{../01/f.vhdl}
+
+\ChapterStart{second}{Questão 2 -- Multiplexador com Decodificador}
+
+\chapter{Questão 2 -- Multiplexador com Decodificador}
+
+\section{Item (a) -- Decodificador 2 para 4}
+
+O decodificador recebe a seleção $w_1 w_0$ e o sinal de habilitação $En$. Com $En = 0$ todas as saídas ficam em 0; com $En = 1$ apenas a saída $y_i$ correspondente ao valor de $w_1 w_0$ vai para 1. A implementação usa uma única atribuição selecionada sobre o vetor \texttt{En \& w1 \& w0}, sem processo.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Sinal & Porta VHDL & Pino \\
+\midrule
+$w_0$ & \texttt{SWITCH\_PINS(0)} (SW0) & PIN\_L22 \\
+$w_1$ & \texttt{SWITCH\_PINS(1)} (SW1) & PIN\_L21 \\
+$En$  & \texttt{SWITCH\_PINS(2)} (SW2) & PIN\_M22 \\
+$y_0 \ldots y_3$ & \texttt{LEDR0} \ldots \texttt{LEDR3} & PIN\_R20, R19, U19, Y19 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\lstinputlisting[language=VHDL]{../02/a.vhdl}
+
+O testbench (\texttt{tb\_dec2\_4.vhdl}) percorre as 8 combinações de entrada:
+
+\begin{center}
+\begin{tabular}{ccc|cccc}
+\toprule
+$En$ & $w_1$ & $w_0$ & $y_3$ & $y_2$ & $y_1$ & $y_0$ \\
+\midrule
+0 & x & x & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 & 0 & 0 & 1 \\
+1 & 0 & 1 & 0 & 0 & 1 & 0 \\
+1 & 1 & 0 & 0 & 1 & 0 & 0 \\
+1 & 1 & 1 & 1 & 0 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Item (b) -- Lógica extra}
+
+O circuito da caixa pontilhada da Figura 1 faz o AND de cada entrada de dados $w_i$ com a saída $y_i$ do decodificador e junta os quatro resultados em um OR:
+\[
+f = w_0 y_0 + w_1 y_1 + w_2 y_2 + w_3 y_3
+\]
+Como o decodificador ativa apenas um $y_i$ por vez, $f$ é igual à entrada $w_i$ do canal selecionado. Na placa, SW0 a SW3 são $w_0$ a $w_3$, SW4 a SW7 são $y_0$ a $y_3$ e o LEDR0 mostra $f$.
+
+\lstinputlisting[language=VHDL]{../02/b.vhdl}
+
+O testbench (\texttt{tb\_extra\_logic.vhdl}) ativa um canal de cada vez, testando o $w_i$ do canal em 1 e em 0 enquanto as outras entradas ficam com o valor oposto, para garantir que só o canal ativo influencia a saída:
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+$y_3 \ldots y_0$ & $w_3 \ldots w_0$ & $f$ \\
+\midrule
+0000 & 1111 & 0 \\
+0001 & 0001 & 1 \\
+0001 & 1110 & 0 \\
+0010 & 0010 & 1 \\
+0010 & 1101 & 0 \\
+0100 & 0100 & 1 \\
+0100 & 1011 & 0 \\
+1000 & 1000 & 1 \\
+1000 & 0111 & 0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Os dois itens foram compilados no Quartus (\texttt{compile.tcl} e \texttt{compile-2.tcl}) sem erros.
+
+\end{document}

@@ -1,10 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
--- ============================================================
--- ITEM (e): demo_setup com 5 estagios.
--- SW0..SW4 = S0..S4, LEDR0 = saida.
--- ============================================================
 entity demo_setup is
     port (
         SWITCH_PINS : in  std_logic_vector(4 downto 0);

@@ -1,8 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
--- Testbench do item (d), com N = 5.
--- LED = '1' quando o numero de chaves ligadas e par.
 entity tb_xbar_chain is
 end entity tb_xbar_chain;
 

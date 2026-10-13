@@ -1,12 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
--- Testbench dos itens (a), (b) e (c).
--- As tres versoes tem a mesma entity (crossbar_switch), entao o
--- mesmo testbench serve para todas. Basta compilar a versao
--- desejada antes (ver a.do, b.do, c.do).
-entity tb_crossbar_switch is
-end entity tb_crossbar_switch;
 
 architecture sim of tb_crossbar_switch is
     signal sw         : std_logic_vector(2 downto 0); -- S & x2 & x1
@@ -21,7 +15,6 @@ begin
 
     stim: process
     begin
-        --      S x2 x1
         sw <= "000"; wait for 10 ns; -- direto: y1=0 y2=0
         sw <= "001"; wait for 10 ns; -- direto: y1=1 y2=0
         sw <= "010"; wait for 10 ns; -- direto: y1=0 y2=1

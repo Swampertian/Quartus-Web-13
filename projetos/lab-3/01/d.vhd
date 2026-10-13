@@ -1,18 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
--- ============================================================
--- ITEM (d): N xbars em cascata (GENERIC + GENERATE).
---
--- Entrada do 1o estagio: x1 = VCC ('1'), x2 = GND ('0').
--- Estagio i usa SWITCH_PINS(i) como bit de controle S_i.
--- Saida y1 do ultimo estagio vai para o LED (LEDR0).
---
--- Cada chave ligada troca as linhas de lugar. Logo o LED acende
--- quando o numero de chaves ligadas e PAR.
---
--- Usa o crossbar_switch do item (a): a.vhdl.
--- ============================================================
 entity xbar_chain is
     generic (
         N : integer := 5
@@ -24,7 +12,6 @@ entity xbar_chain is
 end entity xbar_chain;
 
 architecture structural of xbar_chain is
-    -- top(i) / bot(i) = linhas de cima (y1) e de baixo (y2) na entrada do estagio i
     signal top : std_logic_vector(N downto 0);
     signal bot : std_logic_vector(N downto 0);
 begin

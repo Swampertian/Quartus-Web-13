@@ -25,11 +25,9 @@
 \makefrontpage
 
 \mainmatter
-\ChapterStart{first}{Questão 1 -- \textit{Crossbar Switch}}
+\ChapterStart{first}{Questão 1}
 
-\chapter{Questão 1 -- \textit{Crossbar Switch}}
-
-O componente \texttt{xbar} possui duas entradas de dados ($x_1$, $x_2$), um bit de controle $S$ e duas saídas ($y_1$, $y_2$). Com $S = 0$ os dados passam direto ($y_1 = x_1$, $y_2 = x_2$); com $S = 1$ eles se cruzam ($y_1 = x_2$, $y_2 = x_1$).
+\chapter{Questão 1}
 
 Para que o mesmo código possa ser gravado na placa DE1, as portas usam os nomes da pinagem definida no \texttt{compile.tcl}:
 
@@ -123,7 +121,7 @@ O \texttt{demo\_setup} instancia o \texttt{xbar\_chain} com \texttt{N => 5}, lig
 
 \section{Item (f) -- \texttt{demo\_setup} com 8 estágios}
 
-Igual ao item (e), alterando apenas \texttt{N => 8} e o tamanho do vetor de chaves (SW0 a SW7). O projeto (\texttt{compile-3.tcl}, projeto \texttt{demo\_setup\_8}) compilou sem erros e ocupou 3 elementos lógicos.
+Igual ao item (e), alterando apenas \texttt{N => 8} e o tamanho do vetor de chaves (SW0 a SW7).
 
 \lstinputlisting[language=VHDL]{../01/f.vhdl}
 
@@ -133,7 +131,7 @@ Igual ao item (e), alterando apenas \texttt{N => 8} e o tamanho do vetor de chav
 
 \section{Item (a) -- Decodificador 2 para 4}
 
-O decodificador recebe a seleção $w_1 w_0$ e o sinal de habilitação $En$. Com $En = 0$ todas as saídas ficam em 0; com $En = 1$ apenas a saída $y_i$ correspondente ao valor de $w_1 w_0$ vai para 1. A implementação usa uma única atribuição selecionada sobre o vetor \texttt{En \& w1 \& w0}, sem processo.
+O decodificador recebe a seleção e o sinal de controle. Com En = 0 todas as saídas ficam com 0 e com En = 1 apenas a saida Y, correspondente ao valor as entradas vai para 1
 
 \begin{center}
 \begin{tabular}{lll}
@@ -176,7 +174,7 @@ Como o decodificador ativa apenas um $y_i$ por vez, $f$ é igual à entrada $w_i
 
 \lstinputlisting[language=VHDL]{../02/b.vhdl}
 
-O testbench (\texttt{tb\_extra\_logic.vhdl}) ativa um canal de cada vez, testando o $w_i$ do canal em 1 e em 0 enquanto as outras entradas ficam com o valor oposto, para garantir que só o canal ativo influencia a saída:
+O testbench ativa um canal de cada vez, testando o $w_i$ do canal em 1 e em 0 enquanto as outras entradas ficam com o valor oposto, para garantir que só o canal ativo influencia a saída:
 
 \begin{center}
 \begin{tabular}{ccc}
@@ -196,6 +194,6 @@ $y_3 \ldots y_0$ & $w_3 \ldots w_0$ & $f$ \\
 \end{tabular}
 \end{center}
 
-Os dois itens foram compilados no Quartus (\texttt{compile.tcl} e \texttt{compile-2.tcl}) sem erros.
+
 
 \end{document}

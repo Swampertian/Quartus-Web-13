@@ -1,18 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
--- ============================================================
--- QUESTAO 2, ITEM (a): decodificador 2 para 4 com enable
--- (WITH / SELECT, sem processo).
---
--- SWITCH_PINS(0) = w0
--- SWITCH_PINS(1) = w1
--- SWITCH_PINS(2) = En
--- LEDR0..LEDR3   = y0..y3
---
--- En = '0' -> todas as saidas em '0'
--- En = '1' -> so a saida y(w1 w0) vai para '1'
--- ============================================================
+
 entity dec2_4 is
     port (
         SWITCH_PINS : in  std_logic_vector(2 downto 0);

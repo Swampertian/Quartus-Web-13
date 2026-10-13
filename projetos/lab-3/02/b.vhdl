@@ -1,15 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
--- ============================================================
--- QUESTAO 2, ITEM (b): logica extra (caixa pontilhada da Fig. 1),
--- sem processo. Cada entrada w_i passa por um AND com a saida y_i
--- do decodificador e o OR dos quatro resultados gera f.
---
--- SWITCH_PINS(3 downto 0) = w0..w3
--- SWITCH_PINS(7 downto 4) = y0..y3
--- LEDR0                   = f
--- ============================================================
 entity extra_logic is
     port (
         SWITCH_PINS : in  std_logic_vector(7 downto 0);

@@ -1,11 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
--- ============================================================
--- ITEM (f): demo_setup com 8 estagios.
--- Igual ao item (e), so muda o N (e o tamanho do vetor).
--- SW0..SW7 = S0..S7, LEDR0 = saida.
--- ============================================================
+
 entity demo_setup is
     port (
         SWITCH_PINS : in  std_logic_vector(7 downto 0);
